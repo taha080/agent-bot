@@ -36,17 +36,40 @@ or assets from any commercial product are used here.</p>
 <p>This demo mirrors the repo's local-mode bot: try <code>remember launch day is Monday</code>,
 then <code>recall</code>.</p>
 <div id="chat">
-  <div id="log">helper&gt; Hi, I'm helper. Try 'remember &lt;fact&gt;', 'recall', or 'files'.</div>
+  <div id="log">helper&gt; Hi, I'm helper. Try 'remember &lt;fact&gt;', 'recall', or 'files'. You can also attach a file below.</div>
   <p><input id="msg" placeholder="Type a message…">
   <button id="send">Send</button></p>
+  <p><input type="file" id="attach" multiple>
+  <button id="attachBtn">Attach files</button></p>
+  <div id="attached"></div>
 </div>
 <script>
   const facts = [];
+  const attachedFiles = [];
   const log = document.getElementById('log');
   const input = document.getElementById('msg');
+  const attachedBox = document.getElementById('attached');
   function reply(text) {
     log.textContent += '\nhelper> ' + text;
   }
+  document.getElementById('attachBtn').addEventListener('click', () => {
+    const files = document.getElementById('attach').files;
+    if (!files.length) { reply('No file selected. Choose a file first, then press Attach files.'); return; }
+    for (const file of files) {
+      attachedFiles.push(file);
+      const line = document.createElement('div');
+      line.textContent = 'Attached: ' + file.name + ' (' + file.size + ' bytes)';
+      attachedBox.appendChild(line);
+      if (file.type.startsWith('text/') || file.name.endsWith('.json') || file.name.endsWith('.md')) {
+        file.text().then(text => {
+          const preview = document.createElement('div');
+          preview.textContent = 'Preview of ' + file.name + ': ' + text.slice(0, 300);
+          attachedBox.appendChild(preview);
+        });
+      }
+    }
+    reply('Got ' + files.length + ' file(s). They are listed under the chat. Type "files" to see them.');
+  });
   function send() {
     const text = input.value.trim();
     if (!text) return;
@@ -58,7 +81,9 @@ then <code>recall</code>.</p>
     } else if (text === 'recall') {
       reply(facts.length ? 'I remember:\n- ' + facts.join('\n- ') : 'Nothing remembered yet.');
     } else if (text === 'files') {
-      reply('Demo workspace is in-memory only. The real bot lists its workspace files here.');
+      reply(attachedFiles.length
+        ? 'Attached files:\n- ' + attachedFiles.map(f => f.name + ' (' + f.size + ' bytes)').join('\n- ')
+        : 'No files attached yet. Use the file picker below to attach one.');
     } else {
       reply("I heard: '" + text + "'. Try 'remember <fact>', 'recall', or 'files'.");
     }
