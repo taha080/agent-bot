@@ -34,6 +34,15 @@ class Scene:
     narration: str     # what the narrator says in this scene
     chapter: str = ""  # on-screen chapter title, "" for none
     duration: float = 8.0
+    audio: str = ""    # optional per-scene narration audio, relative to audio_dir
+
+
+def audio_duration(audio_file: Path) -> float:
+    result = subprocess.run([
+        "ffprobe", "-v", "error", "-show_entries", "format=duration",
+        "-of", "csv=p=0", str(audio_file),
+    ], capture_output=True, text=True, check=True)
+    return float(result.stdout.strip())
 
 
 def load_script(script_file: Path) -> list[Scene]:
@@ -82,16 +91,52 @@ def assemble(
     out_file: Path,
     end_card_text: str = "TO BE CONTINUED",
     resolution: str = "1920x1080",
+    audio_dir: Path | None = None,
 ) -> str:
-    """Concatenate clips, add narration, subtitles, chapters, end card."""
+    """Concatenate clips, add narration, subtitles, chapters, end card.
+
+    If a scene has per-scene audio, its clip is looped to exactly the
+    audio's length, so narration is never cut off and no scene freezes
+    past its clip -- the clip simply replays until the voice finishes.
+    """
     clips_dir, out_file = Path(clips_dir), Path(out_file)
     work = out_file.parent / ".assemble_tmp"
     work.mkdir(parents=True, exist_ok=True)
 
+    clip_paths: list[Path] = []
+    audio_paths: list[Path] = []
+    for index, scene in enumerate(scenes):
+        clip = clips_dir / scene.clip
+        if scene.audio and audio_dir:
+            audio = audio_dir / scene.audio
+            scene.duration = audio_duration(audio)
+            looped = work / f"scene{index}.mp4"
+            subprocess.run([
+                "ffmpeg", "-y", "-stream_loop", "-1", "-i", str(clip),
+                "-t", str(scene.duration), "-vf", f"scale={resolution}",
+                "-c:v", "libx264", "-pix_fmt", "yuv420p", str(looped),
+            ], check=True, capture_output=True)
+            clip_paths.append(looped)
+            audio_paths.append(audio)
+        else:
+            clip_paths.append(clip)
+
     concat_list = work / "concat.txt"
     concat_list.write_text("".join(
-        f"file '{(clips_dir / scene.clip).resolve()}'\n" for scene in scenes
+        f"file '{clip.resolve()}'\n" for clip in clip_paths
     ))
+
+    if audio_paths and not narration_audio:
+        soundtrack = work / "soundtrack.mp3"
+        audio_list = work / "audio_concat.txt"
+        audio_list.write_text("".join(
+            f"file '{audio.resolve()}'\n" for audio in audio_paths
+        ))
+        subprocess.run([
+            "ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(audio_list),
+            "-c:a", "libmp3lame", str(soundtrack),
+        ], check=True, capture_output=True)
+        narration_audio = soundtrack
     subtitles = work / "subs.srt"
     subtitles.write_text(build_subtitles(scenes))
 

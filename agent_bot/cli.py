@@ -46,6 +46,7 @@ def main(argv: list[str] | None = None) -> int:
     video.add_argument("--script", required=True, help="script JSON (see examples/script-day.json)")
     video.add_argument("--clips-dir", required=True)
     video.add_argument("--narration", default=None, help="narration audio file (optional)")
+    video.add_argument("--audio-dir", default=None, help="folder for per-scene audio files named in the script")
     video.add_argument("--out", required=True)
     video.add_argument("--end-card", default="TO BE CONTINUED")
 
@@ -87,6 +88,7 @@ def main(argv: list[str] | None = None) -> int:
             scenes, Path(args.clips_dir),
             Path(args.narration) if args.narration else None,
             Path(args.out), end_card_text=args.end_card,
+            audio_dir=Path(args.audio_dir) if args.audio_dir else None,
         ))
         return 0
 
