@@ -1,5 +1,7 @@
 # agent-bot
 
+Live demo: https://taha080.github.io/agent-bot/
+
 Your own named AI teammates, running locally and free — inspired by the
 public idea of Grok Bot (a named agent with its own computer that keeps
 working on multi-step jobs), re-implemented from scratch. No code,

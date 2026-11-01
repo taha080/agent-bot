@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>agent-bot — your own named AI teammates</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 760px; margin: 2rem auto; padding: 0 1rem; line-height: 1.6; color: #111; }
+  h1 { font-size: 2rem; } code { background: #f0f0f0; padding: 0.1rem 0.4rem; border-radius: 4px; }
+  pre { background: #111; color: #eee; padding: 1rem; border-radius: 8px; overflow-x: auto; }
+  #chat { border: 1px solid #ccc; border-radius: 8px; padding: 1rem; }
+  #log { min-height: 120px; white-space: pre-wrap; }
+  #msg { width: 70%; padding: 0.5rem; } button { padding: 0.5rem 1rem; }
+  a { color: #0b5fff; }
+</style>
+</head>
+<body>
+<h1>agent-bot</h1>
+<p>Your own named AI teammates, running locally and free — inspired by the
+public idea of Grok Bot (a named agent with its own computer that keeps
+working on multi-step jobs), re-implemented from scratch. No code, design,
+or assets from any commercial product are used here.</p>
+
+<h2>What it does</h2>
+<ul>
+  <li><strong>Named bots, each with its own workspace</strong> — files, memory, routines.</li>
+  <li><strong>Approvals for sensitive actions</strong> — nothing sensitive runs silently.</li>
+  <li><strong>Routines (teach by showing)</strong> — save steps, replay them any time.</li>
+  <li><strong>Multi-bot chat</strong> — bots hand tasks to each other in one session.</li>
+  <li><strong>Video episode builder</strong> — stitch clips from any video model you
+  already use into one episode with narration, burned-in subtitles, chapter
+  overlays, and a "TO BE CONTINUED" end card, in 1920x1080.</li>
+</ul>
+
+<h2>Try the bot (live demo, runs in your browser)</h2>
+<p>This demo mirrors the repo's local-mode bot: try <code>remember launch day is Monday</code>,
+then <code>recall</code>.</p>
+<div id="chat">
+  <div id="log">helper&gt; Hi, I'm helper. Try 'remember &lt;fact&gt;', 'recall', or 'files'.</div>
+  <p><input id="msg" placeholder="Type a message…">
+  <button id="send">Send</button></p>
+</div>
+<script>
+  const facts = [];
+  const log = document.getElementById('log');
+  const input = document.getElementById('msg');
+  function reply(text) {
+    log.textContent += '\nhelper> ' + text;
+  }
+  function send() {
+    const text = input.value.trim();
+    if (!text) return;
+    log.textContent += '\nyou> ' + text;
+    input.value = '';
+    if (text.startsWith('remember ')) {
+      facts.push(text.slice(9));
+      reply('Noted, I will remember that.');
+    } else if (text === 'recall') {
+      reply(facts.length ? 'I remember:\n- ' + facts.join('\n- ') : 'Nothing remembered yet.');
+    } else if (text === 'files') {
+      reply('Demo workspace is in-memory only. The real bot lists its workspace files here.');
+    } else {
+      reply("I heard: '" + text + "'. Try 'remember <fact>', 'recall', or 'files'.");
+    }
+  }
+  document.getElementById('send').addEventListener('click', send);
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+</script>
+
+<h2>Make a video episode</h2>
+<pre>python -m agent_bot video --script examples/script-day.json \
+  --clips-dir ./my-clips --narration ./narration.mp3 --out episode.mp4</pre>
+<p>Generate clips with your own Grok Bot, Flow, Veo, or another tool you
+have access to, drop them in <code>--clips-dir</code>, and the builder
+stitches them with subtitles, chapters, and an end card. Full code and
+instructions are in the repository.</p>
+
+<p><a href="https://github.com/taha080/agent-bot">View the code on GitHub</a></p>
+<p><small>MIT licensed. Not affiliated with xAI, Grok, or any other product.</small></p>
+</body>
+</html>
