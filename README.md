@@ -23,6 +23,13 @@ design, or assets from any commercial product are used here.
 - **Multi-bot chat:** two bots in one session hand a task to each other:
   `python -m agent_bot team --bots helper,scout --task "recall"`.
 
+## Live demo
+
+Open https://taha080.github.io/agent-bot/ to try a bot in the
+browser. The demo chat also has a file picker: attach files, preview
+text, JSON, and Markdown files (first 300 characters), and type
+`files` to list what you attached.
+
 ## Quick start
 
 ```bash
@@ -62,7 +69,21 @@ python -m agent_bot video --script examples/script-day.json \
 ```
 
 The script JSON lists one scene per clip: `clip`, `narration`,
-`chapter`, and `duration`. Clips are yours — generate them with your
+`chapter`, `duration`, and optionally `audio` — a per-scene narration
+file. Pass its folder with ``--audio-dir``:
+
+```bash
+python -m agent_bot video --script examples/script-day.json \
+  --clips-dir ./my-clips --audio-dir ./my-audio --out episode.mp4
+```
+
+When a scene has `audio`, its clip is looped to exactly that audio's
+length, so narration is never cut off and no scene freezes past its
+clip. If you give per-scene audio and no single ``--narration`` file,
+the per-scene tracks are concatenated into the episode's soundtrack.
+
+Clips are yours — generate them with your
+
 own Grok Bot, Flow, Veo, or another tool you have access to, then drop
 them in `--clips-dir`. `agent_bot/providers.py` also defines a clip
 provider interface: plug in a video API with your own key from the
